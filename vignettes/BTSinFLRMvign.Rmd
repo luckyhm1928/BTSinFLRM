@@ -1,0 +1,242 @@
+---
+title: "Bootstrap inference in functional linear regression models with R"
+author: 
+  - name: Hyemin Yeon^[https://sites.google.com/view/hyeminyeon/]
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+bibliography: 
+  - BTSinFLRMvign_bibfile.bib
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bootstrap inference in functional linear regression models with R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+This is a brief introduction to the package <tt>`BTSinFLRM`</tt> based on Yeon, Dai, and Nordman [-@YDN23RB; -@YDN24PB; -@YDN24WB]. 
+The package mainly contains three functions <tt>`RBinFLRM`</tt>, <tt>`PBinFLRM`</tt>, and <tt>`WBinFLRM`</tt>, 
+which respectively implement the residual, paired, and (multiplier) wild bootstrap methods. 
+The former is developed for functional linear regression models (FLRMs) under homoscedasticity while the latter two methods are used for heteroscedastic FLRMs.
+We illustrate how to use the package with a simulated dataset.
+
+## Generating Gaussian curves
+
+We simulate independent pairs $\{(X_i, Y_i)\}_{i=1}^n$ of functional regressors and scalar responses based on the following FLRM:
+$$Y = \langle \beta, X \rangle + \varepsilon.$$
+The regressor curves $\{X_i\}_{i=1}^n$ are generated identically and independently from a Gaussian process. The construction is based on a truncated Karhuen--Loève expansion. The eigengap $\{\delta_j\}$ decays with polynomial decay rate $\delta_j = 2j^{-a}$ with $a=3.5$ and the eigenfunctions $\{\phi_j\}_{j=1}^J$ are chosen as Fourier functions. The slope function also has a polynomial decay rate $\beta_j = 2j^{-b}$ with $b=3.5$, and set $\beta = \sum_{j=1}^J \beta_j \phi_j$. Here, $J=15$ is used.
+Then, the regressor is constructed as $X \overset{\mathsf{d}}{=} \sum_{j=1}^J \sqrt{\gamma_j} \xi_j \phi_j$ where $\{\gamma_j\}$ are eigenvalues and $\xi_j \sim \mathsf{N}(0,1)$ are (normalized) functional principal component scores. With uniform errors $\varepsilon_i \sim \mathsf{U}(0,1)$, the responses are generated as $Y_i = \langle \beta, X_i \rangle + \varepsilon_i$. 
+```{r genData}
+# simulate the regressor curves from Karhunen–Loève expansion and responses
+J=15
+
+# eigenvalues
+c=2; a=3.5; dt = c*(1:J)^(-a)
+g1 = c*VGAM::zeta(a)
+ga = c(g1, sapply(1:(J-1), function(j){g1 - sum(dt[1:j])}))
+
+# eigenfunctions
+tt = 100; tGrid = seq(0, 1, len=tt); J=15
+phi= t(fda::fourier(tGrid, J))
+
+# slope function
+b=3.5; bj = c*((1:J)^(-b))*(rbinom(J, 1, 0.5)*2-1)
+beta = c(bj %*% phi)
+
+# generate (Gaussian) regressors and responses
+n=50; n0=3
+xi = matrix(rnorm(n*J), n, J); X = xi %*% (phi * sqrt(ga))
+xi0 = matrix(rnorm(n0*J), n0, J); X0 = xi0 %*% (phi * sqrt(ga))
+er = runif(n); Y = c(X %*% beta / tt + er)
+```
+
+
+```{r, echo=FALSE, out.width='60%', fig.align='center', fig.width=7, fig.height=7}
+matplot(tGrid, t(X), type='l', xlab="", ylab="",
+        main="Generated Gaussian regressor curves")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Bootstrap inference
+
+For illustration of bootstrap inference, we choose $k_n = 3$, $h_n \in \{4,5,6\}$, $g_n= \{4,5\}$ for involved truncation parameters and $M=100$ for bootstrap resample size.
+The significance level is here $\alpha = 0.05$.
+
+```{r}
+# trunction parameters
+kn_vec = c(3); hn_vec = c(4,5,6); gn_vec = c(4,5)
+
+# residual bootstrap
+M_bts=100
+
+library(BTSinFLRM)
+```
+
+
+```{r, echo=FALSE, out.width='60%', fig.align='center', fig.width=7, fig.height=7}
+resInfer = BTSinFLRM:::inferFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec)
+tmx = max(c(kn_vec, hn_vec, gn_vec))
+matplot(tGrid, t(resInfer$est$betaHat), type='l', xlab="", ylab="", 
+        main="Estimated slope functions")
+legend("bottomright", legend = paste0("kn=",1:tmx),
+       lty=1:tmx, col=1:tmx, lwd=1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Residual bootstrap
+
+This section describes inference by CLT and residual bootstrap under homoscedasticity [@YDN23RB].
+
+```{r}
+resRB = RBinFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts)
+```
+
+<tt>`resRB$CLT`</tt> provides the confidence and prediction intervals based on central limit theorem [@YDN23RB] with a five dimensional array. Here, the truncation parameter $k_n$ involves estimation of the error variance $\sigma_\varepsilon^2$ with estimator $\hat{\sigma}_\varepsilon^2 \equiv n^{-1} \sum_{i=1}^n (Y_i - \langle \hat{\beta}_{k_n}, X_i \rangle)^2$. 
+
+```{r}
+resRB$CLT
+```
+
+<tt>`resRB$RB`</tt> provides different intervals based on residual bootstrap [@YDN23RB]. It is a list with three dimension where each dimension corresponds to different combinations of tuning parameters $(k_n, h_n, g_n)$. Each list contains a three dimensional array where the last dimension represent different types of intervals:
+
+* Intervals for a truncated projection $\langle \Pi_{h_n} \beta, X_0 \rangle$, the projection $\langle \beta, X_0 \rangle$, and the predicted response $Y_0$. 
+* Individual and simultaneous intervals.
+    + Symmetrized and unsymmetrized individual intervals
+    + Studentized and non-studentized simultaneous intervals.
+
+```{r}
+resRB$RB
+# Access a component of list:
+resRB$RB[["kn=3", "hn=5", "gn=4"]]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Paired bootstrap
+
+This section describes inference by CLT and paired bootstrap under heteroscedasticity [@YDN24PB].
+
+```{r}
+resPB = PBinFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts)
+```
+
+<tt>`resPB$CLT`</tt> provides the confidence intervals based on central limit theorem [@YDN24PB] with a four dimensional array. Here, the truncation parameter $k_n$ is used to compute the estimated scaling $\hat{s}_{h_n}(X_{0,l})$ based on the observed samples.
+
+```{r}
+resPB$CLT
+```
+
+<tt>`resPB$PBintervals`</tt> provides different intervals based on paired bootstrap proposed by @YDN24PB. It is a list with three dimension where each dimension corresponds to different combinations of tuning parameters $(k_n, h_n, g_n)$ as <tt>`resRB$RB`</tt> provides above. Each list contains a four dimensional array where the last two dimensions represent different types of intervals:
+
+* Intervals for a truncated projection $\langle \Pi_{h_n} \beta, X_0 \rangle$ and the untruncated projection $\langle \beta, X_0 \rangle$.
+* Individual and simultaneous intervals denoted as <tt>`II`</tt> and <tt>`SI`</tt> respectively.
+    + Symmetrized and unsymmetrized individual intervals approximated by either non-studentized or studentized bootstrap estimators.
+    + Studentized and non-studentized simultaneous intervals.
+    
+For obtaining studentized simultaneous intervals, two different scaling terms can be constructed when we compute the bootstrap statistics. One is the estimated scaling $\hat{s}_{h_n}(X_{0,l})$ from the observed samples (denoted as <tt>`SI_std1`</tt>) while the other is computed as $\hat{s}^*_{h_n}(X_{0,l})$ from the bootstrap resamples (denoted as <tt>`SI_std2`</tt>). 
+
+```{r}
+resPB$PBintervals
+# Access a component of list:
+resPB$PBintervals[["kn=3", "hn=5", "gn=4"]]
+```
+
+
+<tt>`resPB$PBpvalues`</tt> contains the p-values from the bootstrap testing of whether the projection of the slope function $\beta$ onto the space spanned by the new regressors $\mathcal{X}_0 \equiv \{X_{0,l}\}_{l=1}^L$ based on the testing procedure described in Section 3 of @YDN24PB.
+The null hypothesis $H_0$ is represented as $\Pi_{\mathcal{X}_0} \beta = 0$ where $\Pi_{\mathcal{X}_0}$ denotes the projection operator onto the space spanned by the new regressors $\mathcal{X}_0 \equiv \{X_{0,l}\}_{l=1}^L$.
+This gives a list with three dimension where each dimension corresponds to different combinations of tuning parameters $(k_n, h_n, g_n)$.
+Each dimension contains the p-values from different test statistics:
+
+* The statistics either with or without studentization. The bootstrap statistics can be studentized by the estimated scaling terms from either samples or bootstrap resamples.
+* $L^2$ or maximum type statistics.
+* The test statistics are computed when either enforcing the null $H_0: \Pi_{\mathcal{X}_0} \beta = 0$ or not, which are respectively denoted as <tt>`tilde`</tt> and <tt>`hat`</tt>.
+
+```{r}
+resPB$PBpvalues
+# Access a component of list:
+resPB$PBpvalues[["kn=3", "hn=5", "gn=4"]]
+```
+
+
+
+
+
+
+## Wild bootstrap
+
+This section describes inference by multiplier wild bootstrap under heteroscedasticity [@YDN24WB]. The results of <tt>`WBinFLRM`</tt> exhibit the same structure as the ones of <tt>`PBinFLRM`</tt>; the descriptions are hence omitted.
+
+```{r}
+resWB = WBinFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts, multiplier="normal")
+```
+
+One notable difference is that users can choose multipliers used in <tt>`WBinFLRM`</tt> by sepcifying <tt>`multiplier`</tt> option.
+Three types of multipliers can be considered: two-point distribution with $\mathsf{P}(W_i = -(\sqrt{5}-1)/2) = (\sqrt{5}+1) / (2\sqrt{5}) = 1-\mathsf{P}(W_i = (\sqrt{5}+1)/2)$, the standard normal distribution with $W_i \sim \mathsf{N}(0,1)$, and the distribution of $W_i = V_i/2+(V_i^2-1)/2$ for independent standard normal variables $\{V_i\}_{i=1}^n$, which gives the third moment one $\mathsf{E}^*[W_i^3]=1$.
+These respectively correspond to <tt>`multiplier="bin"`</tt>, <tt>`multiplier="normal"`</tt>, and <tt>`multiplier="HM"`</tt>,
+where the second type is chosen in this example.
+
+
+```{r}
+resWB$WBintervals
+# Access a component of list:
+resWB$WBintervals[["kn=3", "hn=5", "gn=4"]]
+```
+
+Although @YDN24WB does not contain the hypothesis tests based on the wild bootstrap,
+one might mimic the procedure proposed by @YDN24PB in the wild bootstrap procedure.
+The result <tt>`resWB$WBpvalues`</tt> below contains the p-values from this bootstrap testing procedure.
+
+
+```{r}
+resWB$WBpvalues
+# Access a component of list:
+resWB$WBpvalues[["kn=3", "hn=5", "gn=4"]]
+```
+
+
+
+
+
+
+## References
