@@ -78,7 +78,11 @@ M_bts=100
 RBinFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts)
 
 }
+\references{
+Yeon, H., Dai, X., and Nordman, D. (2023). Bootstrap inference in functional linear regression models. \emph{Bernoulli}
+}
 \seealso{
 \code{\link{PBinFLRM}}
 \code{\link{WBinFLRM}}
+\code{\link{test2sofr}}
 }

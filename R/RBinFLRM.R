@@ -25,9 +25,13 @@
 #' Individual intervals are provided with or without symmetrization. 
 #' Simultaneous intervals are provided with or without studentization by the estimated scaling.}
 #' 
+#' @references 
+#' Yeon, H., Dai, X., and Nordman, D. (2023). Bootstrap inference in functional linear regression models. \emph{Bernoulli}
+#' 
 #' @seealso
 #' \code{\link{PBinFLRM}}
 #' \code{\link{WBinFLRM}}
+#' \code{\link{test2sofr}}
 #' 
 #' @examples
 #' 
@@ -66,7 +70,13 @@
 #' 
 #' @export
 RBinFLRM = function(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts=1000, ap=0.05){
-  res = BTSinFLRM:::inferFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, ap)
+  
+  # center X0 by \bar{X}
+  Xmean = colMeans(X)
+  X0Cent = t(t(X0) - Xmean)
+  
+  # inference
+  res = BTSinFLRM:::inferFLRM(X, Y, X0Cent, tGrid, kn_vec, hn_vec, gn_vec, ap)
   n0=nrow(X0)
   # CLT
   CI_CLT_homo = abind::abind(
@@ -88,9 +98,9 @@ RBinFLRM = function(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts=1000, ap=0.05
   CLT_homo = aperm(CLT_homo, c(2,4,3,5,1))
   
   # RB
-  XCent = t(t(X) - colMeans(X))
+  XCent = t(t(X) - Xmean)
   resRBouter = BTSinFLRM:::RBouter(
-    X, Y, X0, tGrid, 
+    X, Y, X0Cent, tGrid, 
     res$est$betaHat, res$est$Y0Hat, res$est$Y0Hat_trunc_hg,
     res$est$erHatCent, res$est$YHat, XCent, 
     res$estTilde$YTilde, res$estTilde$Y0Tilde,

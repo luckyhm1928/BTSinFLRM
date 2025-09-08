@@ -17,11 +17,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-This is a brief introduction to the package <tt>`BTSinFLRM`</tt> based on Yeon, Dai, and Nordman [-@YDN23RB; -@YDN24PB; -@YDN24WB]. 
-The package mainly contains three functions <tt>`RBinFLRM`</tt>, <tt>`PBinFLRM`</tt>, and <tt>`WBinFLRM`</tt>, 
-which respectively implement the residual, paired, and (multiplier) wild bootstrap methods. 
-The former is developed for functional linear regression models (FLRMs) under homoscedasticity while the latter two methods are used for heteroscedastic FLRMs.
-We illustrate how to use the package with a simulated dataset.
+This is a brief introduction to the package <tt>`BTSinFLRM`</tt> based on the works by Yeon, Dai, and Nordman [-@YDN23RB; -@YDN24PB; -@YDN25WB] and Yeon and Kokoszka [-@YK25twosofr]. 
+The package mainly contains four functions <tt>`RBinFLRM`</tt>, <tt>`PBinFLRM`</tt>, <tt>`WBinFLRM`</tt>, and <tt>`test2sofr`</tt>.
+which respectively implement the residual, paired, (multiplier) wild bootstrap methods for mean response inference and two-sample bootstrap tests. 
+The first bootstrap is developed for functional linear regression models (FLRMs) under homoscedasticity, 
+the next two methods are used for heteroscedastic FLRMs,
+and the last one is designed for two-sample testing framework. 
+We illustrate how to use the package with simulated datasets.
+
+# Bootstrap mean response inference
 
 ## Generating Gaussian curves
 
@@ -205,7 +209,7 @@ resPB$PBpvalues[["kn=3", "hn=5", "gn=4"]]
 
 ## Wild bootstrap
 
-This section describes inference by multiplier wild bootstrap under heteroscedasticity [@YDN24WB]. The results of <tt>`WBinFLRM`</tt> exhibit the same structure as the ones of <tt>`PBinFLRM`</tt>; the descriptions are hence omitted.
+This section describes inference by multiplier wild bootstrap under heteroscedasticity [@YDN25WB]. The results of <tt>`WBinFLRM`</tt> exhibit the same structure as the ones of <tt>`PBinFLRM`</tt>; the descriptions are hence omitted.
 
 ```{r}
 resWB = WBinFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts, multiplier="normal")
@@ -223,7 +227,7 @@ resWB$WBintervals
 resWB$WBintervals[["kn=3", "hn=5", "gn=4"]]
 ```
 
-Although @YDN24WB does not contain the hypothesis tests based on the wild bootstrap,
+Although @YDN25WB does not contain the hypothesis tests based on the wild bootstrap,
 one might mimic the procedure proposed by @YDN24PB in the wild bootstrap procedure.
 The result <tt>`resWB$WBpvalues`</tt> below contains the p-values from this bootstrap testing procedure.
 
@@ -236,6 +240,152 @@ resWB$WBpvalues[["kn=3", "hn=5", "gn=4"]]
 
 
 
+# Bootstrap two-sample tests for scalar-on-function regression
+\newcommand{\e}{\varepsilon}
+This chapter describes two-sample inference for scalar-on-function regression proposed by @YK25twosofr.
+We now consider the following two-sample framework:
+$$Y_{ki} = \langle \beta_k, X_{ki} \rangle + \e_{ki}, \quad i=1,\dots,n_k, \quad k=1,2$$
+We are interested in testing whether two slope functions $\beta_1$ and $\beta_2$ are equal, i.e., the null hypothesis is $H_0:\beta_1 = \beta_2$. 
+In this chapter, the data will be generated in a similar way to the previous chapter with $J = 20$. 
+To consider more complex scenarios with unequal covariance operators of the regressors $\{X_{1i}\}_{i=1}^{n_1}$ and $\{X_{2i}\}_{i=1}^{n_2}$ from the two gruops, 
+we will define two distinct eigenvalue dacay rates $a \in \{2.5, 5\}$ and three different orthonormal systems based on trigonometric, monimial, and Chebyshev functions.
+The slope functions can differ linearly or orthogonally,
+the sample sizes are equal as $n_1=25=n_2$,
+the error variance is 1,
+the truncation levels are considered among $H = \{1, \dots, 20\}$,
+and the bootstrap resample size is again 100. 
+
+```{r, test2sofr_evef}
+Jtrue=20 # The number of basis elements used in data generation
+
+# create eigenvalues based on polynomial eigengaps with rate a
+ev_poly = function(a, c, J){
+  dt = c*(1:J)^(-a)
+  ld1 = c*VGAM::zeta(a)
+  ld = c(ld1, sapply(1:(J-1), function(j){ld1 - sum(dt[1:j])}))
+  return(ld)
+}
+
+# eigenvalues for unequal cov
+ga_rough  = ev_poly(2.5, 2, Jtrue) # a=2.5
+ga_smooth = ev_poly(5, 2, Jtrue)   # a=5
+
+# Equi-spaced time grid points in [0,1]
+tt = 50; tGrid_ttt = seq(0, 1, len=tt+1);
+tGrid = tGrid_ttt[1:tt]
+diffrange = diff(tGrid)[1] + diff(range(tGrid)) # when using left points
+scal = diffrange / tt   # scaling factor for integration
+
+# basis functions for beta, and for X under equal cov
+phi_base = t(fda::fourier(tGrid_ttt, 2*Jtrue))[-1,1:tt]  # trigonometric functions
+phi = phi_base[1:Jtrue,]
+
+# basis functions for X under unequal cov
+mono = t(sapply(1:Jtrue, function(j)tGrid^j))
+phi_mono = BTSinFLRM:::orthoL2Equidense(mono, tGrid)
+cheb = t(sapply(1:Jtrue, function(j)pracma::chebPoly(j, 2*tGrid-1)))
+phi_cheb = BTSinFLRM:::orthoL2Equidense(cheb, tGrid)
+
+# Determine the second order structures
+eveq = TRUE # eigenvalues are equal?
+efeq = TRUE # eigenfunctions are equal?
+if(eveq){  # equal eigenvalues
+  ga1 = ga2 = ga_rough
+}else{  # unequal eigenvalues
+  ga1 = ga_smooth; ga2 = ga_rough
+}
+if(efeq){  # equal eigenfunctions
+  phi1 = phi; phi2 = phi
+}else{  # unequal eigenfunctions
+  phi1 = phi_mono; phi2 = phi_cheb
+}
+```
+
+
+```{r}
+# Slope functions
+b=2; Wbetaj = rbinom(Jtrue, 1, 0.5)*2-1
+bj = 3*((1:Jtrue)^(-b))*Wbetaj; beta = c(bj %*% phi)
+
+beta_arr = array(0, dim=c(2, tt, 2), dimnames=list(
+  1:2, NULL, paste0("type", 0:1)
+))
+# 0: linear difference
+beta_arr[1,,"type0"] = 1*beta
+beta_arr[2,,"type0"] = 2*beta
+
+# 1: orthogonal difference
+beta_arr[1,,"type1"] = c(bj[1:5] %*% phi[1:5,])
+beta_arr[2,,"type1"] = c(bj[1:5] %*% phi[6:10,])
+
+beta1 = beta_arr[1,,"type0"]
+c_alter = 0.5 # strength of alternative
+beta2 = (1-c_alter)*beta1 + c_alter*beta_arr[2,,"type0"]
+
+# Other factors
+
+n=50; n1 = n2 = n/2      # n1=48; n2=52
+group = c(rep(1,n1), rep(0,n2))
+idx1 = as.logical(group); idx2 = !idx1
+xi_type=0 # Gaussian random function
+er_type=0 # Normal error
+sig_sq =1 # the error variance
+
+# # # # # # # # # # #
+# generate data
+
+# FPC scores
+Wj = matrix(rnorm(n*Jtrue), n, Jtrue)
+if(xi_type==2){
+  xi = rexp(n) - 1 # normal*exp FPC scores
+}else if(xi_type==1){
+  xi = rnorm(n) # normal*normal FPC scores
+}else{
+  xi = rep(1,n) # independent FPC scores
+}
+
+# # unequal FPC scores
+# xi1 = rnorm(n1); xi2 = rexp(n2) - 1
+# xi[idx1,] = xi1; xi[idx2,] = xi2
+
+Xfpc = matrix(0, n, Jtrue)
+Xfpc[idx1,] = t(sqrt(ga1) * t(xi[idx1]*Wj[idx1,]))
+Xfpc[idx2,] = t(sqrt(ga2) * t(xi[idx2]*Wj[idx2,]))
+
+# regerssor functions
+
+X = matrix(0, n, tt)
+X[idx1,] = Xfpc[idx1,] %*% phi1
+X[idx2,] = Xfpc[idx2,] %*% phi2
+
+X1 = X[idx1,]; X2 = X[idx2,]
+
+X1beta1 = c(X1 %*% beta1 * scal)
+X2beta2 = c(X2 %*% beta2 * scal)
+
+if(er_type==1){   # centered exponential error
+  par_scale = sqrt(sig_sq)
+  er = rexp(n, 1/par_scale) - par_scale
+}else{     # normal error
+  er = rnorm(n, 0,sd=sqrt(sig_sq))
+}
+
+# response variables
+Y1 = X1beta1 + er[idx1]
+Y2 = X2beta2 + er[idx2]
+Y = rep(0,n); Y[idx1] = Y1; Y[idx2] = Y2
+
+# Bootstrap tests for two-sample scalar-on-function regression (not run)
+res2sofr = test2sofr(Y, X, tGrid, group, B=100)
+```
+
+The results <tt>`res2sofr$res_hEach`</tt>  include the test statistics based on pooled (PD) and simultaneous (SD) diagonalization approaches, the corresponding p-values using both asymptotic and bootstrap approximation, and different typs of variance explained (VE) for each truncation level in $H$. 
+The results <tt>`res2sofr$res_hSel`</tt> include both PD and SD statistics, the corresponding p-values, and the selected truncation levels among $H$, 
+when the truncation level is selected by using some VE with threshold $\rho \in (0,1)$. 
+Some example of these results are given below.
+```{r, test2sofr_results}
+res2sofr$res_hSel$pval
+```
 
 
 

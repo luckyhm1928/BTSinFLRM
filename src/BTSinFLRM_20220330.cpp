@@ -922,6 +922,7 @@ List RBouter(
 
 
 
+
 //[[Rcpp::export]]
 List PBinner1(
     arma::vec& idx, arma::mat& X, arma::vec& Y, arma::mat& X0, arma::vec& tGrid, 
@@ -943,6 +944,7 @@ List PBinner1(
     XStar.row(i) = X.row(idx(i));
   }
   
+  
   arma::mat erStar_mat(tmx, n, fill::zeros);
   arma::mat erStarCent_mat(tmx, n, fill::zeros);
   
@@ -960,11 +962,17 @@ List PBinner1(
   arma::vec YStarCent = YStar - YStarbar;
   arma::mat XStarCent(n,tt);
   arma::vec DtHatStar(tt);
+  
+  arma::mat X0Cent_by_star(n0,tt); // center X0 by \bar{X}^*
   for(int t=0;t<tt;++t){
     arma::vec XStarCent_inner = XStar.col(t) - XStarbar(t);
     XStarCent.col(t) = XStarCent_inner;
     DtHatStar(t) = mean(XStarCent_inner % YStarCent);
+    
+    arma::vec X0Cent_by_star_inner = X0.col(t) - XStarbar(t);
+    X0Cent_by_star.col(t) = X0Cent_by_star_inner; // center X0 by \bar{X}^*
   }
+  // X0 = X0Cent_by_star; // center X0 by \bar{X}^*
   
   // estimation
   
@@ -995,7 +1003,7 @@ List PBinner1(
     for(int j=0; j<tmx; ++j){
       arma::vec betaHatStar = GaInvHatStar_cube.slice(j) * (DtHatStar-UHat) * scal;
       betaHatStar_cube_g.tube(j, ii_g) = betaHatStar;
-      arma::vec Y0HatStar_j = X0 * betaHatStar * scal;
+      arma::vec Y0HatStar_j = X0Cent_by_star * betaHatStar * scal; // X0 appear
       Y0HatStar_cube_g.tube(j, ii_g) = Y0HatStar_j;
       
       arma::vec erHatStar = YStar - XStar * betaHatStar * scal;
@@ -1056,7 +1064,7 @@ List PBinner1(
         
         
         // std 1
-        arma::vec sxHat_h = sxHat_cube_kh.tube(ii_k, ii_h) ;
+        arma::vec sxHat_h = sxHat_cube_kh.tube(ii_k, ii_h) ; // X0 appear, but centered by \bar{X}
         arma::vec TStar_std1 = sqrt(n) * TStar / sqrt(sxHat_h);
         rootsStd1CI_trunc_field_inner(ii_k, ii_h, ii_g) = 
           sqrt(n) * rootsCI_trunc / sqrt(sxHat_h);
@@ -1066,7 +1074,7 @@ List PBinner1(
         // std 2
         
         arma::mat GaInvHatStar_h = GaInvHatStar_cube.slice(h-1);
-        arma::mat gixStar = GaInvHatStar_h * trans(X0) * scal;
+        arma::mat gixStar = GaInvHatStar_h * trans(X0Cent_by_star) * scal; // X0 appear
         arma::vec sxHatStar_h = trans(sum((LdHatStar * gixStar * scal) % gixStar * scal));
         
         arma::vec TStar_std2 = sqrt(n) * TStar / sqrt(sxHatStar_h);
@@ -1156,6 +1164,8 @@ List PBinner2(
   arma::vec XTildeStarbar = trans(mean(XTildeStar));
   arma::vec YTildeStarbar_vec = mean(YTildeStar_mat, 1);
   arma::mat YTildeStarCent(tmx, n);
+  
+  arma::mat X0Cent_by_star(n0,tt); // center X0 by \bar{X}^*
   for(int j=0; j<tmx; ++j){
     YTildeStarCent.row(j) = YTildeStar_mat.row(j) - YTildeStarbar_vec(j);
   }
@@ -1169,7 +1179,11 @@ List PBinner2(
         mean(XTildeStarCent_inner %
         trans(YTildeStarCent.row(j)));
     }
+    
+    arma::vec X0Cent_by_star_inner = X0.col(t) - XTildeStarbar(t);
+    X0Cent_by_star.col(t) = X0Cent_by_star_inner; // center X0 by \bar{X}^*
   }
+  // X0 = X0Cent_by_star; // center X0 by \bar{X}^*
   
   
   // estimation
@@ -1204,7 +1218,7 @@ List PBinner2(
       arma::vec betaTildeStar = GaInvTildeStar_cube.slice(j) *
         (DtTildeStar-UTilde) * scal;
       betaTildeStar_cube_g.tube(j, ii_g) = betaTildeStar;
-      arma::vec Y0TildeStar_j = X0 * betaTildeStar * scal;
+      arma::vec Y0TildeStar_j = X0Cent_by_star * betaTildeStar * scal; // X0 appear
       Y0TildeStar_cube_g.tube(j, ii_g) = Y0TildeStar_j;
       
       arma::vec erTildeHatStar =
@@ -1244,13 +1258,13 @@ List PBinner2(
         
         
         // std 1
-        arma::vec sxHat_h = sxHat_cube_kh.tube(ii_k, ii_h) ;
+        arma::vec sxHat_h = sxHat_cube_kh.tube(ii_k, ii_h) ; // X0 appear, but centered by \bar{X}
         arma::vec TTildeStar_std1 = sqrt(n) * TTildeStar / sqrt(sxHat_h);
         
         // std 2
         
         arma::mat GaInvTildeStar_h = GaInvTildeStar_cube.slice(h-1);
-        arma::mat gixTildeStar = GaInvTildeStar_h * trans(X0) * scal;
+        arma::mat gixTildeStar = GaInvTildeStar_h * trans(X0Cent_by_star) * scal; // X0 appear
         arma::vec sxTildeStar_h =
           trans(sum((LdTildeStar * gixTildeStar * scal) % gixTildeStar * scal));
         

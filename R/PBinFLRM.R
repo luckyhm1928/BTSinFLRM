@@ -4,11 +4,11 @@
 #' Perform paired bootstrap inference for projections of new regressors onto the slope function 
 #' in functional linear regression models with scalar response under heteroscedasticity.
 #'
-#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024a) to find individual confidence intervals.
-#' Apply the paired bootstrap (Yeon, Dai, and Nordman, 2024a) to find individual and simultaneous confidence intervals.
+#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024) to find individual confidence intervals.
+#' Apply the paired bootstrap (Yeon, Dai, and Nordman, 2024) to find individual and simultaneous confidence intervals.
 #' Intervals are provided with or without either symmetrization or studentization.
 #' Simultaneous intervals are studentized by either the estimated scaling or the bootstrap scaling.
-#' Apply the bootstrap hypothesis tests (Yeon, Dai, and Nordman, 2024a) 
+#' Apply the bootstrap hypothesis tests (Yeon, Dai, and Nordman, 2024) 
 #' of whether the projections onto multiple new regressors are simultaneously zero or not.
 #'
 #' @param X An n by p matrix of regressor curves. Each row represents one observed regressor curve.
@@ -27,6 +27,9 @@
 #' Intervals are provided with or without either symmetrization or studentization.}
 #' \item{PBpvalues}{P-values from the bootstrap hypothesis tests 
 #' of whether the projections onto multiple new regressors are simultaneously zero or not.}
+#' 
+#' @references 
+#' Yeon, H., Dai, X., and Nordman, D. (2024). Bootstrap inference in functional linear regression models under heteroscedasticity. \emph{Electronic Journal of Statistics}
 #' 
 #' @seealso
 #' \code{\link{RBinFLRM}}
@@ -70,7 +73,13 @@
 #' @export
 PBinFLRM = function(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts=1000, ap=0.05){
   n0 = nrow(X0)
-  res = BTSinFLRM:::inferFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, ap)
+  
+  # center X0 by \bar{X}
+  Xmean = colMeans(X)
+  X0Cent = t(t(X0) - Xmean)
+  
+  # inference
+  res = BTSinFLRM:::inferFLRM(X, Y, X0Cent, tGrid, kn_vec, hn_vec, gn_vec, ap)
   
   # CLT
   CLT_hetero = abind::abind(

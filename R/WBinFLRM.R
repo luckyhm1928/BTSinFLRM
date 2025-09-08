@@ -4,13 +4,13 @@
 #' Conduct wild bootstrap inference for projections of new regressors onto the slope function 
 #' in functional linear regression models with scalar response under heteroscedasticity.
 #'
-#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024a) to find individual confidence intervals.
-#' Apply the multiplier wild bootstrap (Yeon, Dai, and Nordman, 2024b) to find individual and simultaneous intervals.
+#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024) to find individual confidence intervals.
+#' Apply the multiplier wild bootstrap (Yeon, Dai, and Nordman, 2025) to find individual and simultaneous intervals.
 #' Intervals are provided with or without either symmetrization or studentization.
 #' Simultaneous intervals are studentized by either the estimated scaling or the bootstrap scaling.
 #' Apply the bootstrap hypothesis tests 
 #' of whether the projections onto multiple new regressors are simultaneously zero or not;
-#' this testing procedure is similar to the ones proposed by (Yeon, Dai, and Nordman, 2024a).
+#' this testing procedure is similar to the ones proposed by (Yeon, Dai, and Nordman, 2024).
 #'
 #' @param X An n by p matrix of regressor curves. Each row represents one observed regressor curve.
 #' @param Y An vector of n responses. 
@@ -40,6 +40,9 @@
 #' for independent standard normal variables \eqn{\{V_i\}_{i=1}^n}, 
 #' which gives the third moment one \eqn{\mathsf{E}^*[W_i^3]=1}.
 #' These respectively correspond to \code{multiplier="bin"}, \code{multiplier="normal"}, and \code{multiplier="HM"}.
+#' 
+#' @references 
+#' Yeon, H., Dai, X., and Nordman, D. (2025). Wild bootstrap for mean response inference in functional linear regression models. \emph{Submitted}
 #' 
 #' @seealso
 #' \code{\link{RBinFLRM}}
@@ -82,7 +85,13 @@
 #' @export
 WBinFLRM = function(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts=1000, ap=0.05, multiplier="normal"){
   n0 = nrow(X0)
-  res = WBinFLRM::inferFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, ap)
+  
+  # center X0 by \bar{X}
+  Xmean = colMeans(X)
+  X0Cent = t(t(X0) - Xmean)
+  
+  # inference
+  res = BTSinFLRM:::inferFLRM(X, Y, X0Cent, tGrid, kn_vec, hn_vec, gn_vec, ap)
   
   # CLT
   CLT_hetero = abind::abind(
@@ -115,8 +124,8 @@ WBinFLRM = function(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts=1000, ap=0.05
   W = matrix(Worigin, nrow=n)
   
   XCent = t(t(X) - colMeans(X))
-  resWBouter = WBinFLRM::WBouter(
-    X, Y, X0, tGrid, 
+  resWBouter = BTSinFLRM:::WBouter(
+    X, Y, X0Cent, tGrid, 
     res$est$betaHat, res$est$Y0Hat, res$est$Y0Hat_trunc_hg,
     res$est$erHat, res$est$YHat, XCent, 
     res$estTilde$YTilde, res$estTilde$Y0Tilde,
