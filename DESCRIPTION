@@ -1,17 +1,18 @@
 Package: BTSinFLRM
 Type: Package
-Title: Bootstrap inference in functional linear regression models
-Version: 1.0.3
-Date: 2025-09-08
+Title: Bootstrap inference in functional linear regression models with
+        scalar response
+Version: 1.0.2
+Date: 2023-07-08
 Author: Hyemin Yeon
-Maintainer: Hyemin Yeon <hyeon1@kent.edu>
-Description: The package implements three bootstrap methods in functional linear regression models with scalar response, namely the residual bootstrap, paired bootstrap, and (multiplier) wild bootstrap, for inference on projections of the slope function onto new regressors. It also implements bootstrap two-sample tests for scalar-on-function regression.
+Maintainer: Hyemin Yeon <luckyhm@iastate.edu>
+Description: The package implements three bootstrap methods in functional linear regression models with scalar response, namely the residual bootstrap, paired bootstrap, and (multiplier) wild bootstrap, for inference on projections of the slope function onto new regressors.
 License: GPL (>=2)
 Imports: Rcpp (>= 1.0.8)
 LinkingTo: Rcpp, RcppArmadillo (>= 0.11.1.1.0)
 Suggests: knitr, rmarkdown
-RoxygenNote: 7.3.2
+RoxygenNote: 7.2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2025-09-08 23:38:59 UTC; lucky
+Packaged: 2024-04-25 02:27:09 UTC; lucky

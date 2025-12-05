@@ -4,13 +4,13 @@
 #' Conduct wild bootstrap inference for projections of new regressors onto the slope function 
 #' in functional linear regression models with scalar response under heteroscedasticity.
 #'
-#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024) to find individual confidence intervals.
-#' Apply the multiplier wild bootstrap (Yeon, Dai, and Nordman, 2025) to find individual and simultaneous intervals.
+#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024a) to find individual confidence intervals.
+#' Apply the multiplier wild bootstrap (Yeon, Dai, and Nordman, 2024b) to find individual and simultaneous intervals.
 #' Intervals are provided with or without either symmetrization or studentization.
 #' Simultaneous intervals are studentized by either the estimated scaling or the bootstrap scaling.
 #' Apply the bootstrap hypothesis tests 
 #' of whether the projections onto multiple new regressors are simultaneously zero or not;
-#' this testing procedure is similar to the ones proposed by (Yeon, Dai, and Nordman, 2024).
+#' this testing procedure is similar to the ones proposed by (Yeon, Dai, and Nordman, 2024a).
 #'
 #' @param X An n by p matrix of regressor curves. Each row represents one observed regressor curve.
 #' @param Y An vector of n responses. 
@@ -40,9 +40,6 @@
 #' for independent standard normal variables \eqn{\{V_i\}_{i=1}^n}, 
 #' which gives the third moment one \eqn{\mathsf{E}^*[W_i^3]=1}.
 #' These respectively correspond to \code{multiplier="bin"}, \code{multiplier="normal"}, and \code{multiplier="HM"}.
-#' 
-#' @references 
-#' Yeon, H., Dai, X., and Nordman, D. (2025). Wild bootstrap for mean response inference in functional linear regression models. \emph{Submitted}
 #' 
 #' @seealso
 #' \code{\link{RBinFLRM}}

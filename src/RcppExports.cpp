@@ -4,7 +4,16 @@
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
 
+#include <iostream>
+#include <string>
+#include <stdio.h>
+#include <time.h>
+
+#define RCPP_ARMADILLO_FIX_Field
+
 using namespace Rcpp;
+using namespace arma;
+using namespace std;
 
 #ifdef RCPP_USE_GLOBAL_ROSTREAM
 Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();

@@ -25,13 +25,9 @@
 #' Individual intervals are provided with or without symmetrization. 
 #' Simultaneous intervals are provided with or without studentization by the estimated scaling.}
 #' 
-#' @references 
-#' Yeon, H., Dai, X., and Nordman, D. (2023). Bootstrap inference in functional linear regression models. \emph{Bernoulli}
-#' 
 #' @seealso
 #' \code{\link{PBinFLRM}}
 #' \code{\link{WBinFLRM}}
-#' \code{\link{test2sofr}}
 #' 
 #' @examples
 #' 
