@@ -4,11 +4,11 @@
 #' Perform paired bootstrap inference for projections of new regressors onto the slope function 
 #' in functional linear regression models with scalar response under heteroscedasticity.
 #'
-#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024a) to find individual confidence intervals.
-#' Apply the paired bootstrap (Yeon, Dai, and Nordman, 2024a) to find individual and simultaneous confidence intervals.
+#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024) to find individual confidence intervals.
+#' Apply the paired bootstrap (Yeon, Dai, and Nordman, 2024) to find individual and simultaneous confidence intervals.
 #' Intervals are provided with or without either symmetrization or studentization.
 #' Simultaneous intervals are studentized by either the estimated scaling or the bootstrap scaling.
-#' Apply the bootstrap hypothesis tests (Yeon, Dai, and Nordman, 2024a) 
+#' Apply the bootstrap hypothesis tests (Yeon, Dai, and Nordman, 2024) 
 #' of whether the projections onto multiple new regressors are simultaneously zero or not.
 #'
 #' @param X An n by p matrix of regressor curves. Each row represents one observed regressor curve.
