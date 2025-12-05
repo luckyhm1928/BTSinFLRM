@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-This is a brief introduction to the package <tt>`BTSinFLRM`</tt> based on Yeon, Dai, and Nordman [-@YDN23RB; -@YDN24PB; -@YDN24WB]. 
+This is a brief introduction to the package <tt>`BTSinFLRM`</tt> based on Yeon, Dai, and Nordman [-@YDN23RB; -@YDN24PB; -@YDN25WB]. 
 The package mainly contains three functions <tt>`RBinFLRM`</tt>, <tt>`PBinFLRM`</tt>, and <tt>`WBinFLRM`</tt>, 
 which respectively implement the residual, paired, and (multiplier) wild bootstrap methods. 
 The former is developed for functional linear regression models (FLRMs) under homoscedasticity while the latter two methods are used for heteroscedastic FLRMs.
@@ -205,7 +205,7 @@ resPB$PBpvalues[["kn=3", "hn=5", "gn=4"]]
 
 ## Wild bootstrap
 
-This section describes inference by multiplier wild bootstrap under heteroscedasticity [@YDN24WB]. The results of <tt>`WBinFLRM`</tt> exhibit the same structure as the ones of <tt>`PBinFLRM`</tt>; the descriptions are hence omitted.
+This section describes inference by multiplier wild bootstrap under heteroscedasticity [@YDN25WB]. The results of <tt>`WBinFLRM`</tt> exhibit the same structure as the ones of <tt>`PBinFLRM`</tt>; the descriptions are hence omitted.
 
 ```{r}
 resWB = WBinFLRM(X, Y, X0, tGrid, kn_vec, hn_vec, gn_vec, M_bts, multiplier="normal")
@@ -223,7 +223,7 @@ resWB$WBintervals
 resWB$WBintervals[["kn=3", "hn=5", "gn=4"]]
 ```
 
-Although @YDN24WB does not contain the hypothesis tests based on the wild bootstrap,
+Although @YDN25WB does not contain the hypothesis tests based on the wild bootstrap,
 one might mimic the procedure proposed by @YDN24PB in the wild bootstrap procedure.
 The result <tt>`resWB$WBpvalues`</tt> below contains the p-values from this bootstrap testing procedure.
 
