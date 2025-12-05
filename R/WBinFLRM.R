@@ -4,13 +4,13 @@
 #' Conduct wild bootstrap inference for projections of new regressors onto the slope function 
 #' in functional linear regression models with scalar response under heteroscedasticity.
 #'
-#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2024a) to find individual confidence intervals.
-#' Apply the multiplier wild bootstrap (Yeon, Dai, and Nordman, 2024b) to find individual and simultaneous intervals.
+#' Apply the central limit theorem (CLT) (Yeon, Dai, and Nordman, 2025) to find individual confidence intervals.
+#' Apply the multiplier wild bootstrap (Yeon, Dai, and Nordman, 2025) to find individual and simultaneous intervals.
 #' Intervals are provided with or without either symmetrization or studentization.
 #' Simultaneous intervals are studentized by either the estimated scaling or the bootstrap scaling.
 #' Apply the bootstrap hypothesis tests 
 #' of whether the projections onto multiple new regressors are simultaneously zero or not;
-#' this testing procedure is similar to the ones proposed by (Yeon, Dai, and Nordman, 2024a).
+#' this testing procedure is similar to the ones proposed by (Yeon, Dai, and Nordman, 2025).
 #'
 #' @param X An n by p matrix of regressor curves. Each row represents one observed regressor curve.
 #' @param Y An vector of n responses. 
